@@ -95,6 +95,13 @@ static KNOB<int> KnobICBlockSize(KNOB_MODE_WRITEONCE, "pintool", "ic_block_size"
 #define PAGEMAP_LENGTH 8 // pagemap contains 8 bytes of info for each virtual page
 #define PAGE_SHIFT 12 // change if the page size is different than 4KB.
 
+template <typename T>
+std::string ToString(T val)
+{
+    std::stringstream stream;
+    stream << val;
+    return stream.str();
+}
 
 INT32 numThreads = 0;
 
@@ -464,20 +471,25 @@ VOID RecordInstructionFetch(ADDRINT iaddr, THREADID threadid){
   thread_data_t* tdata = static_cast<thread_data_t*>(PIN_GetThreadData(tls_key, threadid));
   if(KnobIFEnable.Value()){
     ADDRINT phy_iaddr=iaddr;
+    // cout<<"test1\n"; 
     if (KnobPhysicalAddress.Value()){
-      char *command = NULL , *pid = NULL , *VA = NULL, *psize=NULL ; 
+    // cout <<"test2\n";   
+     /* *pid = NULL , *VA = NULL, *psize=NULL ;
+     cout<< "test3\n"; 
       std::sprintf(pid, "%d", getpid());
       std::sprintf(VA, "%lu", iaddr);
       std::sprintf(psize, "%d", getpagesize());
-      sprintf(command, "./home/xinyu/trace_generator/src/pagemap '%s' '%s' '%s'", pid , VA, psize);
+	cout <<"test4\n";*/
+	char command[1024];
+      sprintf(command, "/imec/other/memseat/shi94/pagemap/pagemap '%s' '%s' '%s'",ToString(getpid()).c_str(),ToString(iaddr).c_str(),ToString(getpagesize()).c_str());
       FILE *fp = popen(command, "r");
       if ( fp == NULL )
       {
         perror("popen");
         exit(0);
       }else{
-        char * tmp = NULL , *str= NULL;
-        fgets(tmp,sizeof(tmp),fp);
+        char tmp[100], str[100];
+        fgets(tmp,100,fp);
         strcat(str, tmp);
         phy_iaddr = strtoul(str,NULL,10);// 
         pclose(fp);
@@ -536,11 +548,14 @@ VOID RecordGeneral(VOID * ip, VOID * addr, BOOL isWrite, REG base, REG index, BO
   else tdata->read_count++;
   UINT64 addr_req = (long)addr;
   if(KnobPhysicalAddress.Value()){
-      char *command, *pid, *VA, *psize; 
+    /*  char *command, *pid, *VA, *psize; 
       std::sprintf(pid, "%d", getpid());
       std::sprintf(VA, "%ld", (long)addr);
       std::sprintf(psize, "%d", getpagesize());
-      sprintf(command, "./home/xinyu/trace_generator/src/pagemap '%s' '%s' '%s'", pid , VA, psize);
+      sprintf(command, "./home/xinyu/trace_generator/src/pagemap '%s' '%s' '%s'", pid , VA, psize);*/
+      char command[1024];
+      sprintf(command, "/imec/other/memseat/shi94/pagemap/pagemap '%s' '%s' '%s'",ToString(getpid()).c_str(),ToString(addr).c_str(),ToString(getpagesize()).c_str());
+
       FILE *fp = popen(command, "r");
       UINT64 paddr;
       if ( fp == NULL )
@@ -548,8 +563,10 @@ VOID RecordGeneral(VOID * ip, VOID * addr, BOOL isWrite, REG base, REG index, BO
         perror("popen");
         exit(0);
       }else{
-        char * tmp, *str;
-        fgets(tmp,sizeof(tmp),fp);
+        /*char * tmp, *str;
+        fgets(tmp,sizeof(tmp),fp);*/
+        char tmp[100], str[100];
+        fgets(tmp,100,fp);
         strcat(str, tmp);
         paddr = strtoul(str,NULL,10);// 
         pclose(fp);
